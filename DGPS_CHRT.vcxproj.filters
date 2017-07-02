@@ -1,0 +1,57 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{04988b1f-3ac8-4e39-bd58-a6793dc1cc4f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{fe9219ce-abfd-4fe7-9bec-50112a912eb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="test">
+      <UniqueIdentifier>{bf33f1cb-b57b-453e-bf3e-170a6e97e7c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3rdparty">
+      <UniqueIdentifier>{2308ef44-36c2-4971-991c-df00e449987d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include\DGPS_CHRT">
+      <UniqueIdentifier>{258c9489-de37-4d6c-b191-c64247684a0e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="3rdparty\Serial.h">
+      <Filter>3rdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="3rdparty\sockets.h">
+      <Filter>3rdparty</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DGPS_CHRT\GPSCurriculumDesign.h">
+      <Filter>include\DGPS_CHRT</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DGPS_CHRT\TimeAndCoordinateTransform.h">
+      <Filter>include\DGPS_CHRT</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DGPS_CHRT\Matrix.hpp">
+      <Filter>include\DGPS_CHRT</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="3rdparty\Serial.cpp">
+      <Filter>3rdparty</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Decode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Locate.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\TimeAndCoordinateTransform.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="test\main.cpp">
+      <Filter>test</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

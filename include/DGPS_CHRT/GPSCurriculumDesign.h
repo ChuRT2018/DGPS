@@ -15,9 +15,9 @@
 
 namespace  GPSCurriculumDesign {
 
-//#define SPP
+
 #define OPENCOM
-#define OPENDGPS
+//#define OPENDGPS
 
 #define MAXRAWLEN 255
 #define GPSDATASIZE 2048 
@@ -220,6 +220,7 @@ typedef struct DGPSHead {
 }DGPSHead;
 
 typedef struct DGPSMessage {
+	double zCount;
 	char s; //1
 	char UDRE; //2
 	char NumOfSatellite; //5;
@@ -282,8 +283,7 @@ bool ObservationPositionAndVelocity(
 	std::unordered_map<char, DGPSMessage> dgpsmessages,
 	std::vector<range> ranges,
 	const unsigned long GPSWeek,
-	const double GPSt,
-	const double zCount, 
+	const double GPSt, 
 	std::vector<satellitePandV>& satellitePandVs,
 	observationPAndV& currentPAndV);
 

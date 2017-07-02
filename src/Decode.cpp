@@ -807,16 +807,19 @@ bool GPSCurriculumDesign::DecodeDGPS(unsigned char* pdata,int length,
 		}
 
 		bit1 = (wordBits[0] >> 1) & 0x1f;
-		bit2 = ((wordBits[0] << 7) & 0x70) 
-			| ((wordBits[1] << 1) & 0x3f) 
+		bit2 = ((wordBits[0] << 7) & 0x80) 
+			| ((wordBits[1] << 1) & 0x7e) 
 			| ((wordBits[2] >> 5) & 0x01);
 
-		dgpsHead.zCounter = 0.6 * (bit1 * 256 + bit2);
+	//	dgpsHead.zCounter = 0.6 * (bit1 * 256 + bit2);
+		dgpsHead.zCounter = 0.6 * (short)((bit1 << 8) & 0x1f00 | bit2 & 0x00ff);
 		dgpsHead.numOfSeq = (wordBits[2] >> 2) & 0x07;
-		dgpsHead.lengthOfMessage = ((wordBits[2] << 3) & 0x18) 
+		/*dgpsHead.lengthOfMessage = ((wordBits[2] << 3) & 0x18) 
 			| ((wordBits[3] >> 3) & 0x07);
-		dgpsHead.healthState = (wordBits[3]) & 0x07;
-
+		dgpsHead.healthState = (wordBits[3]) & 0x07;*/
+		dgpsHead.lengthOfMessage = ((wordBits[2] << 4) & 0x30)
+			| ((wordBits[3] >> 2) & 0x0f);
+		dgpsHead.healthState = (wordBits[3]) & 0x03;
 		//decode message data
 		if (position + dgpsHead.lengthOfMessage > length + 1) {
 			continue;
@@ -892,19 +895,22 @@ bool GPSCurriculumDesign::DecodeDGPS(unsigned char* pdata,int length,
 			dgpsmessage.ageOfData =  (char)bit1;
 			//1st satellite of 5 words
 			findSatelliteNum++;
-			
-			std::unordered_map<char, DGPSMessage>::iterator it 
-				= dgpsmessages.find(dgpsmessage.NumOfSatellite);
+			if (dgpsmessage.UDRE == 1) {
+				dgpsmessage.zCount = dgpsHead.zCounter;
+				std::unordered_map<char, DGPSMessage>::iterator it
+					= dgpsmessages.find(dgpsmessage.NumOfSatellite);
 
-			if (it == dgpsmessages.end()) {
-				std::pair<char, DGPSMessage> tempgpsephem(
-					dgpsmessage.NumOfSatellite, dgpsmessage);
-				dgpsmessages.insert(tempgpsephem);
+				if (it == dgpsmessages.end()) {
+					std::pair<char, DGPSMessage> tempgpsephem(
+						dgpsmessage.NumOfSatellite, dgpsmessage);
+					dgpsmessages.insert(tempgpsephem);
+				}
+				else {
+					dgpsmessages.at(dgpsmessage.NumOfSatellite) = dgpsmessage;
+				}
+
 			}
-			else {
-				dgpsmessages.at(dgpsmessage.NumOfSatellite) = dgpsmessage;
-			}
-			
+						
 			if (findSatelliteNum >= satelliteNum) {
 				break;
 			}
@@ -959,15 +965,20 @@ bool GPSCurriculumDesign::DecodeDGPS(unsigned char* pdata,int length,
 			dgpsmessage.ageOfData =  (char)bit1;
 			//   2nd satellite of 5 word
 			findSatelliteNum++;
-			 it = dgpsmessages.find(dgpsmessage.NumOfSatellite);
+			if (dgpsmessage.UDRE == 1) {
+				dgpsmessage.zCount = dgpsHead.zCounter;
+				std::unordered_map<char, DGPSMessage>::iterator it
+					= dgpsmessages.find(dgpsmessage.NumOfSatellite);
 
-			if (it == dgpsmessages.end()) {
-				std::pair<char, DGPSMessage> tempgpsephem(
-					dgpsmessage.NumOfSatellite, dgpsmessage);
-				dgpsmessages.insert(tempgpsephem);
-			}
-			else {
-				dgpsmessages.at(dgpsmessage.NumOfSatellite) = dgpsmessage;
+				if (it == dgpsmessages.end()) {
+					std::pair<char, DGPSMessage> tempgpsephem(
+						dgpsmessage.NumOfSatellite, dgpsmessage);
+					dgpsmessages.insert(tempgpsephem);
+				}
+				else {
+					dgpsmessages.at(dgpsmessage.NumOfSatellite) = dgpsmessage;
+				}
+
 			}
 			if (findSatelliteNum >= satelliteNum) {
 				break;
@@ -1012,15 +1023,20 @@ bool GPSCurriculumDesign::DecodeDGPS(unsigned char* pdata,int length,
 			dgpsmessage.ageOfData = (char)bit1;
 			// 3rd satellite of 5 word;
 			findSatelliteNum++;
-			it = dgpsmessages.find(dgpsmessage.NumOfSatellite);
+			if (dgpsmessage.UDRE == 1) {
+				dgpsmessage.zCount = dgpsHead.zCounter;
+				std::unordered_map<char, DGPSMessage>::iterator it
+					= dgpsmessages.find(dgpsmessage.NumOfSatellite);
 
-			if (it == dgpsmessages.end()) {
-				std::pair<char, DGPSMessage> tempgpsephem(
-					dgpsmessage.NumOfSatellite, dgpsmessage);
-				dgpsmessages.insert(tempgpsephem);
-			}
-			else {
-				dgpsmessages.at(dgpsmessage.NumOfSatellite) = dgpsmessage;
+				if (it == dgpsmessages.end()) {
+					std::pair<char, DGPSMessage> tempgpsephem(
+						dgpsmessage.NumOfSatellite, dgpsmessage);
+					dgpsmessages.insert(tempgpsephem);
+				}
+				else {
+					dgpsmessages.at(dgpsmessage.NumOfSatellite) = dgpsmessage;
+				}
+
 			}
 			if (findSatelliteNum >= satelliteNum) {
 				break;

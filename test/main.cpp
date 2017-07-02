@@ -21,9 +21,14 @@ int GPSCurriculumDesign::byte30th = 1;
 int main()
 {
 	//FILE* fout;
-	if ((fout = fopen(std::string(".\\data\\ObsPos.txt").c_str(), "wb")) == NULL) {
+	/*if ((fout = fopen(std::string(".\\data\\ObsPos.txt").c_str(), "w")) == NULL) {
 		return 0;
+	}*/
+	std::ofstream ofs(std::string(".\\data\\Obs.txt").c_str());
+	if (!ofs.is_open()) {
+		std::cout << "file open failed" << std::endl;
 	}
+	//if(!(ofs = ofstream(std::string(".\\data\\Obs.txt").c_str())))
 
 	DGPSHead dgpsHead;
 	std::unordered_map<unsigned long, gpsephem> gpsephems;
@@ -81,7 +86,9 @@ int main()
 		positionOfEphemBuffer = 0;
 		unsigned char* _ephemBuffer = nullptr;
 		int movePos = 0;
-		while (positionOfEphemBuffer <= sizeOfEphem) {
+		int whileCount = 0;
+		while (positionOfEphemBuffer <= sizeOfEphem && whileCount < 100) {
+			whileCount++;
 			positionOfEphemBuffer += movePos;
 			bool getHeader = Findhead(ephemBuffer + positionOfEphemBuffer, sizeOfEphem - positionOfEphemBuffer, headOfEphemMessage)
 				&& DecodeHead(
@@ -122,16 +129,22 @@ int main()
 					gpsephems, PRN);
 				//std::cout << PRN << std::endl;
 			}
-			
+
+		}
+		if (whileCount >= 100) {
+			return 1;
 		}
 	}
-	/*---------------end the decode of ephem--------------------*/
 
-	log = "log ionutcb onchanged\n          ";
-	while (!serial.SendData(log, 32)) {
+	/*---------------end the decode of ephem--------------------*/
+	{
+
+		log = "log ionutcb onchanged\n          ";
+		while (!serial.SendData(log, 32)) {
+			Sleep(2000);
+		}
 		Sleep(2000);
 	}
-	Sleep(2000);
 
 	log = "log rangeb ontime 1\n            ";
 	while (!serial.SendData(log, 32)) {
@@ -140,11 +153,11 @@ int main()
 	Sleep(2000);
 
 
-	log = "log psrposb ontime 2\n           ";
+	/*log = "log psrposb ontime 2\n           ";
 	while (!serial.SendData(log, 32)) {
 		Sleep(2000);
 	}
-	Sleep(2000);
+	Sleep(2000);*/
 
 #endif
 
@@ -154,7 +167,7 @@ int main()
 	if (!OpenDGPSSocket(socket)) {
 		std::cout << "socket open failed" << std::endl;
 		return 1;
-	}
+}
 #endif	
 	std::cout << "init successed" << std::endl;
 	unsigned char gpsData[GPSDATASIZE];
@@ -175,16 +188,17 @@ int main()
 
 #ifdef OPENDGPS
 		dgpsBufferLength = recv(socket, (char*)dgpsData, DGPSDATASIZE, 0);
+		if (dgpsBufferLength != 0) {
+			bool decodeDGPS = DecodeDGPS((unsigned char*)dgpsData,
+				dgpsBufferLength, dgpsHead, dgpsmessages);
+		}
 #endif
 		std::cout << gpsBufferLength << " " << dgpsBufferLength << std::endl;
 		if (gpsBufferLength == 0) {
 			continue;
 		}
 
-		if (dgpsBufferLength != 0) {
-			bool decodeDGPS = DecodeDGPS((unsigned char*)dgpsData,
-				dgpsBufferLength, dgpsHead, dgpsmessages);
-		}
+
 		/*if (dgpsBufferLength == 0) {
 			for (int i = 0; i < dgpsMessages.size(); i++) {
 				std::cout << (int)dgpsMessages[i].NumOfSatellite << " ";
@@ -218,16 +232,18 @@ int main()
 		std::cout << header.messageID << std::endl;
 		//gpsData = _gpsdata;
 
-		if (header.messageID == 7) {
-			//GPSEPHEM
-			unsigned long PRN = 0;
-			getGPSEphem = DecodeGPSEphem(
-				_gpsData - 3,
-				header.headLength,
-				header.messageLength,
-				gpsephems, PRN);
-			//std::cout << PRN << std::endl;
+		if (0) {
 		}
+		//else if (header.messageID == 7) {
+		//	//GPSEPHEM
+		//	unsigned long PRN = 0;
+		//	getGPSEphem = DecodeGPSEphem(
+		//		_gpsData - 3,
+		//		header.headLength,
+		//		header.messageLength,
+		//		gpsephems, PRN);
+		//	//std::cout << PRN << std::endl;
+		//}
 		else if (header.messageID == 8) {
 			//IONUTC
 			getIonutc = DecodeIonutc(
@@ -270,20 +286,20 @@ int main()
 				dgpsmessages,
 				ranges,
 				header.week,
-				header.gpsSecondBin / 1000, dgpsHead.zCounter,
-				satellitePandVs,
+				header.gpsSecondBin / 1000, satellitePandVs,
 				obsPandV)) {
 				continue;
 			}
-			count++;
-			std::cout << "locating succeed" << std::endl;
+
+
 #ifdef LOGOBSP
 			XYZ xyz = { obsPandV.x, obsPandV.y, obsPandV.z };
-			BLH blh;
-			XYZ2BLH(xyz, blh);
-			fprintf(fout, "%015.7f %015.7f %015.7f %015.7f %015.7f %015.7f %015.7f\n",
-				blh.longitude * 180 / PI + 180, blh.latitude * 180 / PI, blh.height,
-				obsPandV.vx, obsPandV.vy, obsPandV.vz, obsPandV.pdop);
+			XYZ originXYZ = { -2267824.655,5009330.712,3220988.006 };
+			ENU enu;
+			XYZ2ENU(originXYZ, xyz, enu);
+			std::cout << enu.e << " " << enu.n << " " << enu.u << std::endl;
+			//fprintf(fout, "%015.7f %015.7f %015.7f\n", enu.e, enu.n, enu.u);
+			ofs << enu.e << " " << enu.n << " " << enu.u << std::endl;
 #endif
 			ranges.clear();
 			satellitePandVs.clear();
@@ -304,7 +320,8 @@ int main()
 		//	//RANGECMP
 		//}
 	}
-	fclose(fout);
+	//fclose(fout);
+	ofs.close();
 	system("pause");
 	return 0;
 }

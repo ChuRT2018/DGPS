@@ -276,7 +276,6 @@ bool GPSCurriculumDesign::ObservationPositionAndVelocity(
 	std::vector<range> ranges,
 	const unsigned long GPSWeek,
 	const double GPSt,
-	const double zCount,
 	std::vector<satellitePandV>& satellitePandVs,
 	observationPAndV& currentPAndV)
 {
@@ -316,30 +315,7 @@ bool GPSCurriculumDesign::ObservationPositionAndVelocity(
 			continue;
 		}
 		gpsephem gpsephem_ = it->second;
-#ifdef SPP
-#else
-		std::unordered_map<char, DGPSMessage>::iterator it2
-			= dgpsmessages.find((char)ranges[i].PRN);
 
-		if (it2 == dgpsmessages.end()) {
-			continue;
-		}
-		if (gpsephem_.iodc != it2->second.ageOfData) {
-			continue;	
-		}
-		
-		double secondInHour = GPSt - (int)GPSt / 3600 / 24 * 3600 * 24;
-		while (secondInHour - 3600 > 0) {
-			secondInHour -= 3600;
-		}
-		double t_t0 = secondInHour - zCount;
-		if (abs(t_t0) < 60 || abs(abs(t_t0) - 3600) < 60 ) {
-			dgpss.push_back((t_t0 - 3600) * it2->second.rangeRateCorrect + it2->second.pseCorrect);
-		}
-		else {
-			continue;
-		}
-#endif
 		SetTimeDelta(GPSSecondAfterCorrect, GPSWeekAfterCorrect,
 			GPSt, GPSWeek, deltaTime);
 
@@ -387,7 +363,30 @@ bool GPSCurriculumDesign::ObservationPositionAndVelocity(
 		//	- sin(deltaTime * OMEGAE) * satellitePandV_.x;
 		//satellitePandV_.z = satellitePandV_.z;
 		//satellitePandV_.PRN = ranges[i].PRN;
+#ifndef OPENDGPS
+#else
+		std::unordered_map<char, DGPSMessage>::iterator it2
+			= dgpsmessages.find((char)ranges[i].PRN);
 
+		if (it2 == dgpsmessages.end()) {
+			continue;
+		}
+		if (gpsephem_.iodc != it2->second.ageOfData) {
+			continue;	
+		}
+		
+		double secondInHour = GPSt - (int)GPSt / 3600 / 24 * 3600 * 24;
+		while (secondInHour - 3600 > 0) {
+			secondInHour -= 3600;
+		}
+		double t_t0 = secondInHour - it2->second.zCount;
+		if (abs(t_t0) < 60 || abs(abs(t_t0) - 3600) < 60 ) {
+			dgpss.push_back(t_t0 * it2->second.rangeRateCorrect + it2->second.pseCorrect);
+		}
+		else {
+			continue;
+		}
+#endif
 		innerVectorOfSates.push_back(satellitePandV_);
 		psrs.push_back(ranges[i].psr);
 		dopps.push_back(ranges[i].dopp);
@@ -453,7 +452,7 @@ bool GPSCurriculumDesign::ObservationPositionAndVelocity(
 			b.ChangeElement(i, 1, (originXYZ.y - satelliteY) / r);
 			b.ChangeElement(i, 2, (originXYZ.z - satelliteZ) / r);
 			b.ChangeElement(i, 3, 1);
-#ifdef SPP
+#ifndef OPENDGPS
 			Klobutchar(ionutc_, GPSt /*- currentPAndV.ct / SPEEDOFLIGHT*/,
 				blh.latitude, blh.longitude, azimuth, angle * PI / 180, klobutcharCorrect);
 			Hopefield(obsBLH.height, angle, hopefieldCorrect);
@@ -463,7 +462,7 @@ bool GPSCurriculumDesign::ObservationPositionAndVelocity(
 			double wi = psrs[i] - r - currentPAndV.ct +
 				timeCorrects[i] * SPEEDOFLIGHT
 				- klobutcharCorrect - hopefieldCorrect
-				-dgps;
+				+dgps;
 			double d = (satelliteX - originXYZ.x) * satelliteVx +
 				(satelliteY - originXYZ.y) * satelliteVy +
 				(satelliteZ - originXYZ.z) * satelliteVz;
